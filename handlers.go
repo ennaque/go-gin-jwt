@@ -18,13 +18,13 @@ func (gwt *Gwt) loginHandler(c *gin.Context) {
 		return
 	}
 
-	gwt.settings.LoginResponseFunc(c, http.StatusOK, accessData.AccessToken,
-		accessData.AccessExpire, refreshData.RefreshToken, refreshData.RefreshExpire)
+	gwt.settings.LoginResponseFunc(c, http.StatusOK, accessData.token,
+		accessData.expire, refreshData.token, refreshData.expire)
 }
 func (gwt *Gwt) refreshHandler(c *gin.Context) {
 	mapToken := map[string]string{}
 	if err := c.ShouldBindJSON(&mapToken); err != nil {
-		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, ErrRefreshTokenIsNotProvided.Error())
+		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, errRefreshTokenIsNotProvided.Error())
 		return
 	}
 	parsedToken, err := parseToken(mapToken["refresh_token"], gwt.settings.RefreshSecretKey, gwt.settings.SigningMethod)
@@ -37,11 +37,11 @@ func (gwt *Gwt) refreshHandler(c *gin.Context) {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, getClaimsErr.Error())
 		return
 	}
-	if tokenExpErr := isTokenExpired(gwt.settings, claims[refreshUuidClaim]); tokenExpErr != nil {
+	if tokenExpErr := gwt.settings.storage.isTokenExpired(claims[refreshUuidClaim], mapToken["refresh_token"]); tokenExpErr != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusUnauthorized, tokenExpErr.Error())
 		return
 	}
-	if deleteRefreshErr := deleteTokensFromStorage(gwt.settings, claims[refreshUuidClaim],
+	if deleteRefreshErr := gwt.settings.storage.deleteTokensFromStorage(claims[refreshUuidClaim],
 		claims[accessUuidClaim]); deleteRefreshErr != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusInternalServerError, err.Error())
 		return
@@ -52,8 +52,8 @@ func (gwt *Gwt) refreshHandler(c *gin.Context) {
 		return
 	}
 
-	gwt.settings.LoginResponseFunc(c, http.StatusOK, accessData.AccessToken,
-		accessData.AccessExpire, refreshData.RefreshToken, refreshData.RefreshExpire)
+	gwt.settings.LoginResponseFunc(c, http.StatusOK, accessData.token,
+		accessData.expire, refreshData.token, refreshData.expire)
 }
 func (gwt *Gwt) logoutHandler(c *gin.Context) {
 	accessToken, err := getHeaderToken(c.Request.Header.Get(authHeader), gwt.settings.AuthHeadName)
@@ -71,11 +71,11 @@ func (gwt *Gwt) logoutHandler(c *gin.Context) {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, getClaimsErr.Error())
 		return
 	}
-	if tokenExpErr := isTokenExpired(gwt.settings, claims[accessUuidClaim]); tokenExpErr != nil {
+	if tokenExpErr := gwt.settings.storage.isTokenExpired(claims[accessUuidClaim], accessToken); tokenExpErr != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusUnauthorized, tokenExpErr.Error())
 		return
 	}
-	if deleteRefreshErr := deleteTokensFromStorage(gwt.settings, claims[accessUuidClaim],
+	if deleteRefreshErr := gwt.settings.storage.deleteTokensFromStorage(claims[accessUuidClaim],
 		claims[refreshUuidClaim]); deleteRefreshErr != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusInternalServerError, err.Error())
 		return
@@ -99,7 +99,7 @@ func (gwt *Gwt) authMiddleware() gin.HandlerFunc {
 			gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, getClaimsErr.Error())
 			return
 		}
-		if tokenExpErr := isTokenExpired(gwt.settings, claims[accessUuidClaim]); tokenExpErr != nil {
+		if tokenExpErr := gwt.settings.storage.isTokenExpired(claims[accessUuidClaim], accessToken); tokenExpErr != nil {
 			gwt.settings.ErrResponseFunc(c, http.StatusUnauthorized, tokenExpErr.Error())
 			return
 		}

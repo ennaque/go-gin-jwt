@@ -7,19 +7,19 @@ import (
 )
 
 type refreshTokenData struct {
-	userId        string
-	RefreshToken  string
-	RefreshUuid   string
-	RefreshExpire int64
-	AccessUuid    string
+	userId     string
+	token      string
+	uuid       string
+	expire     int64
+	accessUuid string
 }
 
 type accessTokenData struct {
-	userId       string
-	AccessToken  string
-	AccessUuid   string
-	AccessExpire int64
-	RefreshUuid  string
+	userId      string
+	token       string
+	uuid        string
+	expire      int64
+	refreshUuid string
 }
 
 type Settings struct {
@@ -55,6 +55,8 @@ type Settings struct {
 	ErrResponseFunc func(c *gin.Context, code int, message string)
 
 	RedisConnection *redis.Client
+
+	storage storageInterface
 }
 
 type Gwt struct {

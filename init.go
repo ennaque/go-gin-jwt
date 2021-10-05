@@ -47,11 +47,14 @@ var (
 )
 
 func Init(settings Settings) (*Gwt, error) {
+	if err := initStorage(&settings); err != nil {
+		return nil, err
+	}
 	if settings.Authenticator == nil {
-		return nil, ErrEmptyAuthenticator
+		return nil, errEmptyAuthenticator
 	}
 	if settings.AccessSecretKey == nil {
-		return nil, ErrEmptyAccessSecretKey
+		return nil, errEmptyAccessSecretKey
 	}
 	if settings.RefreshSecretKey == nil {
 		settings.RefreshSecretKey = settings.AccessSecretKey
@@ -60,7 +63,7 @@ func Init(settings Settings) (*Gwt, error) {
 		settings.SigningMethod = defaultSigningMethod
 	} else {
 		if availSigningMethods[settings.SigningMethod] == "" {
-			return nil, ErrUnknownSigningMethod
+			return nil, errUnknownSigningMethod
 		}
 	}
 	if settings.AccessLifetime == 0 {
@@ -83,4 +86,12 @@ func Init(settings Settings) (*Gwt, error) {
 	}
 
 	return &Gwt{settings: &settings}, nil
+}
+
+func initStorage(settings *Settings) error {
+	if settings.RedisConnection == nil {
+		return errEmptyRedisConnection
+	}
+	settings.storage = &redisStorage{con: settings.RedisConnection}
+	return nil
 }

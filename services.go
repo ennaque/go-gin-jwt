@@ -19,8 +19,7 @@ func getTokens(settings *Settings, userId string) (*accessTokenData, *refreshTok
 	if refreshError != nil {
 		return nil, nil, refreshError
 	}
-	if saveErr := saveTokensIntoStorage(settings, accessData.AccessExpire, accessData.AccessUuid,
-		refreshData.RefreshExpire, refreshData.RefreshUuid, userId); saveErr != nil {
+	if saveErr := settings.storage.saveTokensIntoStorage(accessData, refreshData); saveErr != nil {
 		return nil, nil, saveErr
 	}
 	return accessData, refreshData, nil
@@ -29,19 +28,19 @@ func getTokens(settings *Settings, userId string) (*accessTokenData, *refreshTok
 func createAccessToken(settings *Settings, userId string,
 	accessUuid string, refreshUuid string) (*accessTokenData, error) {
 	td := &accessTokenData{}
-	td.AccessExpire = time.Now().Add(settings.AccessLifetime).Unix()
-	td.AccessUuid = accessUuid
-	td.RefreshUuid = refreshUuid
+	td.expire = time.Now().Add(settings.AccessLifetime).Unix()
+	td.uuid = accessUuid
+	td.refreshUuid = refreshUuid
 	td.userId = userId
 
 	var err error
-	td.AccessToken, err = createToken(
+	td.token, err = createToken(
 		settings.SigningMethod,
-		jwt.MapClaims{accessUuidClaim: td.AccessUuid, userIdClaim: td.userId,
-			expiredClaim: td.AccessExpire, refreshUuidClaim: td.RefreshUuid},
+		jwt.MapClaims{accessUuidClaim: td.uuid, userIdClaim: td.userId,
+			expiredClaim: td.expire, refreshUuidClaim: td.refreshUuid},
 		settings.AccessSecretKey)
 	if err != nil {
-		return nil, ErrFailedToCreateAccessToken
+		return nil, errFailedToCreateAccessToken
 	}
 	return td, nil
 }
@@ -49,19 +48,19 @@ func createAccessToken(settings *Settings, userId string,
 func createRefreshToken(settings *Settings, userId string,
 	accessUuid string, refreshUuid string) (*refreshTokenData, error) {
 	td := &refreshTokenData{}
-	td.RefreshExpire = time.Now().Add(settings.RefreshLifetime).Unix()
-	td.RefreshUuid = refreshUuid
-	td.AccessUuid = accessUuid
+	td.expire = time.Now().Add(settings.RefreshLifetime).Unix()
+	td.uuid = refreshUuid
+	td.accessUuid = accessUuid
 	td.userId = userId
 
 	var err error
-	td.RefreshToken, err = createToken(
+	td.token, err = createToken(
 		settings.SigningMethod,
-		jwt.MapClaims{refreshUuidClaim: td.RefreshUuid,
-			userIdClaim: td.userId, expiredClaim: td.RefreshExpire, accessUuidClaim: td.AccessUuid},
+		jwt.MapClaims{refreshUuidClaim: td.uuid,
+			userIdClaim: td.userId, expiredClaim: td.expire, accessUuidClaim: td.accessUuid},
 		settings.RefreshSecretKey)
 	if err != nil {
-		return nil, ErrFailedToCreateRefreshToken
+		return nil, errFailedToCreateRefreshToken
 	}
 	return td, nil
 }
@@ -74,16 +73,16 @@ func createToken(signingMethod string, claims jwt.MapClaims, secretKey []byte) (
 func parseToken(tkn string, secret []byte, signingMethod string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tkn, func(token *jwt.Token) (interface{}, error) {
 		if jwt.GetSigningMethod(signingMethod) != token.Method {
-			return nil, ErrInvalidSigningMethod
+			return nil, errInvalidSigningMethod
 		}
 
 		return secret, nil
 	})
 	if err != nil {
-		return nil, ErrTokenExpired
+		return nil, errTokenExpired
 	}
 	if !token.Valid {
-		return nil, ErrTokenInvalid
+		return nil, errTokenInvalid
 	}
 	return token, nil
 }
@@ -95,23 +94,23 @@ func getClaims(token *jwt.Token, claimNames []string) (map[string]string, error)
 		for _, el := range claimNames {
 			val, ok := claims[el].(string)
 			if !ok {
-				return nil, ErrTokenInvalid
+				return nil, errTokenInvalid
 			}
 			res[el] = val
 		}
 		return res, nil
 	}
-	return nil, ErrTokenInvalid
+	return nil, errTokenInvalid
 }
 
 func getHeaderToken(headerString string, authHeadName string) (string, error) {
 	if headerString == "" {
-		return "", ErrNoAuthHeader
+		return "", errNoAuthHeader
 	}
 
 	parts := strings.SplitN(headerString, " ", 2)
 	if !(len(parts) == 2 && parts[0] == authHeadName) {
-		return "", ErrInvalidAuthHeader
+		return "", errInvalidAuthHeader
 	}
 
 	return parts[1], nil
