@@ -47,6 +47,8 @@ type Settings struct {
 	// Must return user id as string. Required.
 	Authenticator func(c *gin.Context) (string, error)
 
+	GetUserFunc func(userId string) (interface{}, error)
+
 	LoginResponseFunc func(c *gin.Context, code int, accessToken string,
 		accessExpire int64, refreshToken string, refreshExpire int64)
 

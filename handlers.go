@@ -106,7 +106,12 @@ func (gwt *Gwt) authMiddleware() gin.HandlerFunc {
 			gwt.settings.ErrResponseFunc(c, http.StatusUnauthorized, tokenExpErr.Error())
 			return
 		}
-		c.Set(userIdClaim, claims[userIdClaim])
+		user, userErr := gwt.settings.GetUserFunc(claims[userIdClaim])
+		if userErr != nil {
+			gwt.settings.ErrResponseFunc(c, http.StatusInternalServerError, userErr.Error())
+			return
+		}
+		c.Set(UserKey, user)
 		c.Next()
 	}
 }
@@ -117,7 +122,7 @@ func (gwt *Gwt) forceLogoutHandler(c *gin.Context) {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, errUserIdIsNotProvided.Error())
 		return
 	}
-	if err := gwt.ForceLogoutUser(mapUserId[userIdRequestParam]); err != nil {
+	if err := gwt.settings.storage.deleteAllTokens(mapUserId[userIdRequestParam]); err != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, err.Error())
 		return
 	}

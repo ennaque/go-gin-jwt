@@ -12,6 +12,9 @@ var (
 	// errEmptyAccessSecretKey indicates access secret key is empty
 	errEmptyAccessSecretKey = errors.New("empty access token secret key")
 
+	// errEmptyGetUserFunc indicates get user func is empty
+	errEmptyGetUserFunc = errors.New("empty get user by id func")
+
 	// errEmptyAuthenticator indicates authentication function is empty
 	errEmptyAuthenticator = errors.New("empty authentication function")
 

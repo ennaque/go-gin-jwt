@@ -14,6 +14,7 @@ var (
 	authHeader               = "Authorization"
 	userIdRequestParam       = "user_id"
 	refreshTokenRequestParam = "refresh_token"
+	UserKey                  = "user"
 )
 
 var availSigningMethods = map[string]string{
@@ -49,11 +50,14 @@ var (
 )
 
 func Init(settings Settings) (*Gwt, error) {
-	if err := _initStorage(&settings); err != nil {
+	if err := initStorage(&settings); err != nil {
 		return nil, err
 	}
 	if settings.Authenticator == nil {
 		return nil, errEmptyAuthenticator
+	}
+	if settings.GetUserFunc == nil {
+		return nil, errEmptyGetUserFunc
 	}
 	if settings.AccessSecretKey == nil {
 		return nil, errEmptyAccessSecretKey
@@ -90,7 +94,7 @@ func Init(settings Settings) (*Gwt, error) {
 	return &Gwt{settings: &settings}, nil
 }
 
-func _initStorage(settings *Settings) error {
+func initStorage(settings *Settings) error {
 	if settings.RedisConnection == nil {
 		return errEmptyRedisConnection
 	}
