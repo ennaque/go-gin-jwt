@@ -24,7 +24,7 @@ func (gwt *Gwt) loginHandler(c *gin.Context) {
 }
 func (gwt *Gwt) refreshHandler(c *gin.Context) {
 	mapToken := map[string]string{}
-	if err := c.ShouldBindJSON(&mapToken); err != nil {
+	if err := c.ShouldBind(&mapToken); err != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, errRefreshTokenIsNotProvided.Error())
 		return
 	}
@@ -118,11 +118,11 @@ func (gwt *Gwt) authMiddleware() gin.HandlerFunc {
 
 func (gwt *Gwt) forceLogoutHandler(c *gin.Context) {
 	mapUserId := map[string]string{}
-	if err := c.ShouldBindJSON(&mapUserId); err != nil {
+	if err := c.ShouldBind(&mapUserId); err != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, errUserIdIsNotProvided.Error())
 		return
 	}
-	if err := gwt.settings.storage.deleteAllTokens(mapUserId[userIdRequestParam]); err != nil {
+	if err := gwt.ForceLogoutUser(mapUserId[userIdRequestParam]); err != nil {
 		gwt.settings.ErrResponseFunc(c, http.StatusBadRequest, err.Error())
 		return
 	}
