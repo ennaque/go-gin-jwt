@@ -75,3 +75,6 @@ func (gwt *Gwt) GetLogoutHandler() func(c *gin.Context) {
 func (gwt *Gwt) GetAuthMiddleware() gin.HandlerFunc {
 	return gwt.authMiddleware()
 }
+func (gwt *Gwt) GetForceLogoutHandler() func(c *gin.Context) {
+	return gwt.forceLogoutHandler
+}

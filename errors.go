@@ -44,4 +44,10 @@ var (
 
 	// errInvalidAuthHeader indicates auth header is not valid
 	errInvalidAuthHeader = errors.New("invalid auth header")
+
+	// errUserIdIsNotProvided indicates user id is not provided
+	errUserIdIsNotProvided = errors.New("user id is not provided")
+
+	// errNotAuthUser indicates user is not authenticated
+	errNotAuthUser = errors.New("user is not authenticated")
 )

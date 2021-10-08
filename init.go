@@ -7,11 +7,13 @@ import (
 )
 
 var (
-	userIdClaim      = "user_id"
-	accessUuidClaim  = "access_uuid"
-	refreshUuidClaim = "refresh_uuid"
-	expiredClaim     = "exp"
-	authHeader       = "Authorization"
+	userIdClaim              = "user_id"
+	accessUuidClaim          = "access_uuid"
+	refreshUuidClaim         = "refresh_uuid"
+	expiredClaim             = "exp"
+	authHeader               = "Authorization"
+	userIdRequestParam       = "user_id"
+	refreshTokenRequestParam = "refresh_token"
 )
 
 var availSigningMethods = map[string]string{
@@ -47,7 +49,7 @@ var (
 )
 
 func Init(settings Settings) (*Gwt, error) {
-	if err := initStorage(&settings); err != nil {
+	if err := _initStorage(&settings); err != nil {
 		return nil, err
 	}
 	if settings.Authenticator == nil {
@@ -88,7 +90,7 @@ func Init(settings Settings) (*Gwt, error) {
 	return &Gwt{settings: &settings}, nil
 }
 
-func initStorage(settings *Settings) error {
+func _initStorage(settings *Settings) error {
 	if settings.RedisConnection == nil {
 		return errEmptyRedisConnection
 	}
