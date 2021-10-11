@@ -2,7 +2,6 @@ package gwt
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"time"
 )
 
@@ -56,27 +55,5 @@ type Settings struct {
 
 	ErrResponseFunc func(c *gin.Context, code int, message string)
 
-	RedisConnection *redis.Client
-
-	storage storageInterface
-}
-
-type Gwt struct {
-	settings *Settings
-}
-
-func (gwt *Gwt) GetLoginHandler() func(c *gin.Context) {
-	return gwt.loginHandler
-}
-func (gwt *Gwt) GetRefreshHandler() func(c *gin.Context) {
-	return gwt.refreshHandler
-}
-func (gwt *Gwt) GetLogoutHandler() func(c *gin.Context) {
-	return gwt.logoutHandler
-}
-func (gwt *Gwt) GetAuthMiddleware() gin.HandlerFunc {
-	return gwt.authMiddleware()
-}
-func (gwt *Gwt) GetForceLogoutHandler() func(c *gin.Context) {
-	return gwt.forceLogoutHandler
+	Storage StorageInterface
 }

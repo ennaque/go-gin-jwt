@@ -1,9 +1,10 @@
 package gwt
 
-type storageInterface interface {
-	deleteTokens(userId string, uuid ...string) error
-	saveTokens(accessTokenData *accessTokenData, refreshTokenData *refreshTokenData) error
-	isRefreshExpired(uuid string, token string, userId string) error
-	isAccessExpired(uuid string, token string, userId string) error
-	deleteAllTokens(userId string) error
+type StorageInterface interface {
+	DeleteTokens(userId string, uuid ...string) error
+	SaveTokens(userId string, accessUuid string, refreshUuid string, accessExpire int64,
+		refreshExpire int64, accessToken string, refreshToken string) error
+	HasRefreshToken(uuid string, token string, userId string) error
+	HasAccessToken(uuid string, token string, userId string) error
+	DeleteAllTokens(userId string) error
 }

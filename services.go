@@ -1,5 +1,9 @@
 package gwt
 
-func (gwt *Gwt) ForceLogoutUser(userId string) error {
-	return gwt.settings.storage.deleteAllTokens(userId)
+type Service struct {
+	settings *Settings
+}
+
+func (service *Service) ForceLogoutUser(userId string) error {
+	return service.settings.Storage.DeleteAllTokens(userId)
 }

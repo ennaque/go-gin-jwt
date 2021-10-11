@@ -49,18 +49,24 @@ var (
 	}
 )
 
+type Gwt struct {
+	Service    *Service
+	Handler    *Handler
+	Middleware *Middleware
+}
+
 func Init(settings Settings) (*Gwt, error) {
-	if err := initStorage(&settings); err != nil {
-		return nil, err
+	if settings.Storage == nil {
+		return nil, ErrEmptyStorage
 	}
 	if settings.Authenticator == nil {
-		return nil, errEmptyAuthenticator
+		return nil, ErrEmptyAuthenticator
 	}
 	if settings.GetUserFunc == nil {
-		return nil, errEmptyGetUserFunc
+		return nil, ErrEmptyGetUserFunc
 	}
 	if settings.AccessSecretKey == nil {
-		return nil, errEmptyAccessSecretKey
+		return nil, ErrEmptyAccessSecretKey
 	}
 	if settings.RefreshSecretKey == nil {
 		settings.RefreshSecretKey = settings.AccessSecretKey
@@ -69,7 +75,7 @@ func Init(settings Settings) (*Gwt, error) {
 		settings.SigningMethod = defaultSigningMethod
 	} else {
 		if availSigningMethods[settings.SigningMethod] == "" {
-			return nil, errUnknownSigningMethod
+			return nil, ErrUnknownSigningMethod
 		}
 	}
 	if settings.AccessLifetime == 0 {
@@ -91,13 +97,9 @@ func Init(settings Settings) (*Gwt, error) {
 		settings.LogoutResponseFunc = defaultLogoutResponseFunc
 	}
 
-	return &Gwt{settings: &settings}, nil
-}
-
-func initStorage(settings *Settings) error {
-	if settings.RedisConnection == nil {
-		return errEmptyRedisConnection
-	}
-	settings.storage = &redisStorage{con: settings.RedisConnection}
-	return nil
+	return &Gwt{
+		Middleware: &Middleware{settings: &settings},
+		Handler:    &Handler{settings: &settings},
+		Service:    &Service{settings: &settings},
+	}, nil
 }

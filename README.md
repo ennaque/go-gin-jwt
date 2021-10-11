@@ -23,6 +23,16 @@ package main
 func main() {
   router := gin.Default()
 
+  db, err := gorm.Open(postgres.Open(GetDBConnectionData()))
+  if err != nil {
+    panic("db con failed")
+  }
+  
+  gs, err := storage.InitGormStorage(db, "jwt1234_")
+  if err != nil {
+    panic(err)
+  }
+  
   auth, _ := gwt.Init(gwt.Settings{
     Authenticator: func(c *gin.Context) (string, error) {
       var loginCredentials LoginCredentials
@@ -37,7 +47,8 @@ func main() {
     },
     AccessSecretKey: []byte("access_super_secret"),
     RefreshSecretKey: []byte("refresh_super_secret"),
-    RedisConnection: redis.Client,
+    Storage: gs,
+    // Storage: &storage.RedisStorage{Con: GetRedisClient()},
     GetUserFunc: func(userId string) (interface{}, error) {
       return GetUserById(userId)
     },
@@ -48,13 +59,13 @@ func main() {
   })
   
   a := router.Group("auth") {
-    a.POST("/logout", auth.GetLogoutHandler())
-    a.POST("/login", auth.GetLoginHandler())
-    a.POST("/refresh", auth.GetRefreshHandler())
-    a.POST("/force-logout", auth.GetForceLogoutHandler())
+    a.POST("/logout", auth.Handler.GetLogoutHandler())
+    a.POST("/login", auth.Handler.GetLoginHandler())
+    a.POST("/refresh", auth.Handler.GetRefreshHandler())
+    a.POST("/force-logout", auth.Handler.GetForceLogoutHandler())
   }
   
-  router.Group("/api").Use(auth.GetAuthMiddleware()).GET("/get-user-id", func(c *gin.Context) {
+  router.Group("/api").Use(auth.Middleware.GetAuthMiddleware()).GET("/get-user-id", func(c *gin.Context) {
     user, _ := c.Get("user")
     c.JSON(http.StatusOK, gin.H{
       "userId": user.(*models.User).ID,
