@@ -1,4 +1,4 @@
-# gwt
+# gin-jwt
 jwt package for gin go applications
 
 # Usage
@@ -6,13 +6,13 @@ jwt package for gin go applications
 Download using [go module](https://blog.golang.org/using-go-modules):
 
 ```sh
-go get github.com/ennaque/gwt
+go get github.com/ennaque/gin-jwt
 ```
 
 Import it in your code:
 
 ```go
-import "github.com/ennaque/gwt"
+import gwt "github.com/ennaque/gin-jwt"
 ```
 
 # Example
