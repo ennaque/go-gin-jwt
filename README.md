@@ -136,4 +136,4 @@ Response `200 OK`:
 ```sh
 {}
 ```
-Additionaly there is a public method ```gwt.ForceLogoutUser()```
+Additionaly there is a public method ```gwt.Service.ForceLogoutUser(userId)```
