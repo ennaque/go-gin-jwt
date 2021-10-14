@@ -1,0 +1,25 @@
+name: tests
+on: [push]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Go 1.17
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: go build .
+
+      - name: Test
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          go test -tags test -short ./... -coverprofile=coverage.out
+          bash <(curl -s https://codecov.io/bash)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
