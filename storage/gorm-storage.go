@@ -7,7 +7,7 @@ import (
 )
 
 type gormStorage struct {
-	con *gorm.DB
+	con gormInterface
 }
 
 func (gs *gormStorage) DeleteTokens(userId string, uuid ...string) error {

@@ -15,18 +15,19 @@ func (mw *Middleware) GetAuthMiddleware() gin.HandlerFunc {
 
 func (mw *Middleware) authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		accessToken, err := getHeaderToken(c.Request.Header.Get(authHeader), mw.settings.AuthHeadName)
-		if err != nil {
-			mw.settings.ErrResponseFunc(c, http.StatusUnauthorized, err.Error())
+		service := &tokenService{}
+		accessToken, getErr := getHeaderToken(c.Request.Header.Get(authHeader), mw.settings.AuthHeadName)
+		if getErr != nil {
+			mw.settings.ErrResponseFunc(c, http.StatusUnauthorized, getErr.Error())
 			return
 		}
-		parsedToken, err := parseToken(accessToken, mw.settings.AccessSecretKey, mw.settings.SigningMethod)
-		if err != nil {
-			mw.settings.ErrResponseFunc(c, http.StatusBadRequest, err.Error())
+		parsedToken, parseErr := service.parseToken(accessToken, mw.settings.AccessSecretKey, mw.settings.SigningMethod)
+		if parseErr != nil {
+			mw.settings.ErrResponseFunc(c, http.StatusBadRequest, parseErr.Error())
 			return
 		}
-		claims, getClaimsErr := getClaims(parsedToken, []string{accessUuidClaim, userIdClaim, expiredClaim})
-		if err != nil {
+		claims, getClaimsErr := service.getClaims(parsedToken, []string{accessUuidClaim, userIdClaim, expiredClaim})
+		if getClaimsErr != nil {
 			mw.settings.ErrResponseFunc(c, http.StatusBadRequest, getClaimsErr.Error())
 			return
 		}
@@ -34,7 +35,7 @@ func (mw *Middleware) authMiddleware() gin.HandlerFunc {
 			mw.settings.ErrResponseFunc(c, http.StatusUnauthorized, tokenExpErr.Error())
 			return
 		}
-		if expErr := isExpired(claims[expiredClaim]); expErr != nil {
+		if expErr := service.isExpired(claims[expiredClaim]); expErr != nil {
 			mw.settings.ErrResponseFunc(c, http.StatusUnauthorized, expErr.Error())
 			return
 		}
