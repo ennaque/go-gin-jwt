@@ -1,4 +1,4 @@
-# gin-jwt
+# gin-jwt ![tests](https://github.com/ennaque/gin-jwt/workflows/tests/badge.svg) [![codecov](https://codecov.io/gh/ennaque/gin-jwt/branch/master/graph/badge.svg?token=WZMWD36EKQ)](https://codecov.io/gh/ennaque/gin-jwt)
 jwt package for gin go applications
 
 # Usage
