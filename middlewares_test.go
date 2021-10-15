@@ -74,9 +74,9 @@ func TestParseTokenError(t *testing.T) {
 func TestHasAccessTokenError(t *testing.T) {
 	tService := tokenService{}
 	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("", accessData.token+"wrong", true, false)
+	rr := testAuthMiddlewareInit("no token", accessData.token, true, false)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 }
 
 func TestAccessTokenExpiredError(t *testing.T) {
