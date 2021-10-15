@@ -110,6 +110,9 @@ func TestDefaultAuthHeaderName(t *testing.T) {
 
 func TestDefaultFunctions(t *testing.T) {
 	settings := getSettingsFixture()
+	settings.LogoutResponseFunc = nil
+	settings.LoginResponseFunc = nil
+	settings.ErrResponseFunc = nil
 	auth, _ := Init(*settings)
 
 	assert.IsType(t, func(c *gin.Context, code int, accessToken string,
