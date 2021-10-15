@@ -1,6 +1,7 @@
 package gwt
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -105,4 +106,15 @@ func TestDefaultAuthHeaderName(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultAuthHeadName, auth.Service.settings.AuthHeadName)
+}
+
+func TestDefaultFunctions(t *testing.T) {
+	settings := getSettingsFixture()
+	auth, _ := Init(*settings)
+
+	assert.IsType(t, func(c *gin.Context, code int, accessToken string,
+		accessExpire int64, refreshToken string, refreshExpire int64) {
+	}, auth.Service.settings.LoginResponseFunc)
+	assert.IsType(t, func(c *gin.Context, code int, message string) {}, auth.Service.settings.ErrResponseFunc)
+	assert.IsType(t, func(c *gin.Context, code int) {}, auth.Service.settings.LogoutResponseFunc)
 }
