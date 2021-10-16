@@ -3,12 +3,11 @@ package storage
 import (
 	"context"
 	"github.com/ennaque/gwt"
-	"github.com/go-redis/redis/v8"
 	"time"
 )
 
 type RedisStorage struct {
-	Con *redis.Client
+	Con redisInterface
 }
 
 func (rs *RedisStorage) DeleteTokens(userId string, uuid ...string) error {
@@ -49,8 +48,7 @@ func (rs *RedisStorage) DeleteAllTokens(userId string) error {
 	if len(userIdUuidKeys) == 0 {
 		return gwt.ErrNotAuthUser
 	}
-	rs.Con.Del(context.Background(), userIdUuidKeys...)
-	return nil
+	return rs.Con.Del(context.Background(), userIdUuidKeys...).Err()
 }
 
 func (rs *RedisStorage) _isExpired(key string, token string) error {
