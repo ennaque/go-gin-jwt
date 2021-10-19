@@ -134,14 +134,14 @@ func (m *gormMock) Delete(value interface{}, conds ...interface{}) (tx *gorm.DB)
 	args := m.Called()
 	return args.Get(0).(*gorm.DB)
 }
-func (m *gormMock) Where(query interface{}, args ...interface{}) (tx gormInterface) {
+func (m *gormMock) Where(query interface{}, args ...interface{}) (tx interface{ gormInterface }) {
 	arguments := m.Called()
-	return arguments.Get(0).(gormInterface)
+	return arguments.Get(0).(interface{ gormInterface })
 }
-func (m *gormMock) Unscoped() (tx gormInterface) {
+func (m *gormMock) Unscoped() (tx interface{ gormInterface }) {
 	arguments := m.Called()
-	return arguments.Get(0).(gormInterface)
+	return arguments.Get(0).(interface{ gormInterface })
 }
-func (m *gormMock) Transaction(fc func(tx gormInterface) error, opts ...*sql.TxOptions) (err error) {
-	return fc(m.Called().Get(0).(gormInterface))
+func (m *gormMock) Transaction(fc func(tx interface{ gormInterface }) error, opts ...*sql.TxOptions) (err error) {
+	return fc(m.Called().Get(0).(interface{ gormInterface }))
 }

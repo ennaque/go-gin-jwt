@@ -13,7 +13,7 @@ type gormStorage struct {
 }
 
 func (gs *gormStorage) DeleteTokens(userId string, uuid ...string) error {
-	err := gs.con.Transaction(func(tx gormInterface) error {
+	err := gs.con.Transaction(func(tx interface{ gormInterface }) error {
 		for _, id := range uuid {
 			if err := tx.Unscoped().Where(&tokenData{UserId: userId, Uuid: id}).Delete(&tokenData{}).Error; err != nil {
 				return err
@@ -28,7 +28,7 @@ func (gs *gormStorage) DeleteTokens(userId string, uuid ...string) error {
 }
 func (gs *gormStorage) SaveTokens(userId string, accessUuid string, refreshUuid string, accessExpire int64,
 	refreshExpire int64, accessToken string, refreshToken string) error {
-	err := gs.con.Transaction(func(tx gormInterface) error {
+	err := gs.con.Transaction(func(tx interface{ gormInterface }) error {
 		if accessErr := tx.Create(&tokenData{Token: accessToken, Uuid: accessUuid,
 			Expire: accessExpire, UserId: userId, TokenType: "access"}).Error; accessErr != nil {
 			return accessErr
@@ -65,14 +65,14 @@ func (gs *gormStorage) DeleteAllTokens(userId string) error {
 	return nil
 }
 
-func InitGormStorage(con gormInterface, tablePrefix string) (gwt.StorageInterface, error) {
+func InitGormStorage(con interface{ gormInterface }, tablePrefix string) (gwt.StorageInterface, error) {
 	if err := initDb(con, tablePrefix); err != nil {
 		return nil, err
 	}
 	return &gormStorage{con: con}, nil
 }
 
-func initDb(con gormInterface, tablePrefix string) error {
+func initDb(con interface{ gormInterface }, tablePrefix string) error {
 	viper.Set("token_table_name", tablePrefix+gwtTokensTablePrefix)
 	return con.AutoMigrate(&tokenData{})
 }

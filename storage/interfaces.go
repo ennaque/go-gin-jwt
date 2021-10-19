@@ -9,9 +9,9 @@ import (
 )
 
 type gormInterface interface {
-	Transaction(fc func(tx gormInterface) error, opts ...*sql.TxOptions) (err error)
-	Unscoped() (tx gormInterface)
-	Where(query interface{}, args ...interface{}) (tx gormInterface)
+	Transaction(fc func(tx interface{ gormInterface }) error, opts ...*sql.TxOptions) (err error)
+	Unscoped() (tx interface{ gormInterface })
+	Where(query interface{}, args ...interface{}) (tx interface{ gormInterface })
 	Delete(value interface{}, conds ...interface{}) (tx *gorm.DB)
 	Create(value interface{}) (tx *gorm.DB)
 	First(dest interface{}, conds ...interface{}) (tx *gorm.DB)
