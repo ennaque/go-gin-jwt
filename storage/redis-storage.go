@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	"github.com/ennaque/gin-jwt"
+	"github.com/ennaque/go-gin-jwt"
 	"time"
 )
 

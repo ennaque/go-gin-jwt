@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/ennaque/gin-jwt"
+	"github.com/ennaque/go-gin-jwt"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
