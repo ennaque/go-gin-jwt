@@ -1,4 +1,4 @@
-module github.com/ennaque/gin-jwt
+module github.com/ennaque/go-gin-jwt
 
 go 1.17
 
