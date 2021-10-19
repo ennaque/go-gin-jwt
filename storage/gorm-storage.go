@@ -9,7 +9,7 @@ import (
 var gwtTokensTablePrefix = "_gwt_token_data"
 
 type gormStorage struct {
-	con gormInterface
+	con interface{ gormInterface }
 }
 
 func (gs *gormStorage) DeleteTokens(userId string, uuid ...string) error {

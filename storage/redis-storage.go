@@ -7,7 +7,7 @@ import (
 )
 
 type RedisStorage struct {
-	Con redisInterface
+	Con interface{ redisInterface }
 }
 
 func (rs *RedisStorage) DeleteTokens(userId string, uuid ...string) error {
