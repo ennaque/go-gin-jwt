@@ -3,16 +3,17 @@ package storage
 import (
 	"context"
 	"github.com/ennaque/go-gin-jwt"
+	"github.com/go-redis/redis/v8"
 	"time"
 )
 
 type RedisStorage struct {
-	Con interface{ redisInterface }
+	adapter redisAdapterInterface
 }
 
 func (rs *RedisStorage) DeleteTokens(userId string, uuid ...string) error {
-	if err := rs.Con.Del(context.Background(), rs._getStorageKeys(userId, uuid...)...).Err(); err != nil {
-		return gwt.ErrCannotDeleteToken
+	if err := rs.adapter.Del(context.Background(), rs._getStorageKeys(userId, uuid...)...); err != nil {
+		return err
 	}
 	return nil
 }
@@ -25,10 +26,13 @@ func (rs *RedisStorage) SaveTokens(
 	refreshExpire int64,
 	accessToken string,
 	refreshToken string) error {
-	pipe := rs.Con.TxPipeline()
-	pipe.Set(context.Background(), rs._getStorageKey("a"+userId, accessUuid), accessToken, time.Unix(accessExpire, 0).Sub(time.Now()))
-	pipe.Set(context.Background(), rs._getStorageKey("r"+userId, refreshUuid), refreshToken, time.Unix(refreshExpire, 0).Sub(time.Now()))
-	_, err := pipe.Exec(context.Background())
+	_, err := rs.adapter.SaveMultipleInPipe(
+		context.Background(),
+		redisValue{key: rs._getStorageKey("a"+userId, accessUuid), value: accessToken,
+			expiration: time.Unix(accessExpire, 0).Sub(time.Now())},
+		redisValue{key: rs._getStorageKey("r"+userId, refreshUuid), value: refreshToken,
+			expiration: time.Unix(refreshExpire, 0).Sub(time.Now())},
+	)
 	if err != nil {
 		return gwt.ErrCannotSaveToken
 	}
@@ -48,11 +52,11 @@ func (rs *RedisStorage) DeleteAllTokens(userId string) error {
 	if len(userIdUuidKeys) == 0 {
 		return gwt.ErrNotAuthUser
 	}
-	return rs.Con.Del(context.Background(), userIdUuidKeys...).Err()
+	return rs.adapter.Del(context.Background(), userIdUuidKeys...)
 }
 
 func (rs *RedisStorage) _isExpired(key string, token string) error {
-	tkn, err := rs.Con.Get(context.Background(), key).Result()
+	tkn, err := rs.adapter.Get(context.Background(), key)
 	if err != nil {
 		return gwt.ErrTokenExpired
 	}
@@ -64,7 +68,7 @@ func (rs *RedisStorage) _isExpired(key string, token string) error {
 
 func (rs *RedisStorage) _getUserIdUuidStorageKeys(userId string) []string {
 	var keysToDelete []string
-	iter := rs.Con.Scan(context.Background(), 0, "[ar]"+userId+"_*", 0).Iterator()
+	iter := rs.adapter.GetScanIterator(context.Background(), 0, "[ar]"+userId+"_*", 0)
 	for iter.Next(context.Background()) {
 		keysToDelete = append(keysToDelete, iter.Val())
 	}
@@ -81,4 +85,8 @@ func (rs *RedisStorage) _getStorageKeys(userId string, uuids ...string) []string
 
 func (rs *RedisStorage) _getStorageKey(userId string, uuid string) string {
 	return userId + "_" + uuid
+}
+
+func InitRedisStorage(client *redis.Client) gwt.StorageInterface {
+	return &RedisStorage{adapter: &redisAdapter{con: client}}
 }

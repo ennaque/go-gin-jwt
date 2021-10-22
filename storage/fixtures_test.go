@@ -2,146 +2,87 @@ package storage
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
-	"time"
 )
 
-type redisCmdFullInterface interface {
-	redisIntCmdInterface
-	redisStringCmdInterface
-	redisScanCmdInterface
-	redisIntCmdInterface
-}
-
-// redis mocks
-type redisMock struct {
-	mock.Mock
-	redisCmdMock      redisCmdFullInterface
-	redisPipelineMock redisPipelineInterface
-}
-
-func (m *redisMock) Del(ctx context.Context, keys ...string) redisIntCmdInterface {
-	return m.redisCmdMock
-}
-func (m *redisMock) Get(ctx context.Context, key string) redisStringCmdInterface {
-	return m.redisCmdMock
-}
-func (m *redisMock) Scan(ctx context.Context, cursor uint64, match string, count int64) redisScanCmdInterface {
-	return m.redisCmdMock
-}
-func (m *redisMock) TxPipeline() redisPipelineInterface {
-	return m.redisPipelineMock
-}
-
-type redisPipelineMock struct {
+type gormAdapterMock struct {
 	mock.Mock
 }
 
-func (m *redisPipelineMock) Exec(ctx context.Context) ([]redis.Cmder, error) {
-	if m.Called().Get(0) == nil {
-		return nil, nil
-	}
-
-	return nil, m.Called().Get(0).(error)
+func (m *gormAdapterMock) Transaction(db *gorm.DB, fc func(tx *gorm.DB) error) error {
+	return fc(db)
 }
-func (m *redisPipelineMock) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) redisStatusCmdInterface {
-	return &redisCmdMock{}
+func (m *gormAdapterMock) DeleteUnscoped(db *gorm.DB, query interface{}, model interface{}) *gorm.DB {
+	return m.Called().Get(0).(*gorm.DB)
 }
-
-type redisIteratorMock struct {
-	mock.Mock
-	nextCalled bool
-}
-
-func (m *redisIteratorMock) Err() error {
-	args := m.Called()
-	return args.Error(0)
-}
-func (m *redisIteratorMock) Next(ctx context.Context) bool {
-	if m.nextCalled {
-		return false
-	}
-	m.nextCalled = true
-	args := m.Called()
-	return args.Bool(0)
-}
-func (m *redisIteratorMock) Val() string {
-	return m.Called().String(0)
-}
-
-type redisCmdMock struct {
-	mock.Mock
-}
-
-func (m *redisCmdMock) Err() error {
-	args := m.Called()
-	return args.Error(0)
-}
-func (m *redisCmdMock) Val() int64 {
-	args := m.Called()
-	return int64(args.Int(0))
-}
-func (m *redisCmdMock) Result() (string, error) {
-	if _, ok := m.Called().Get(0).(string); !ok {
-		return "", m.Called().Get(0).(error)
-	}
-	return m.Called().String(0), nil
-}
-func (m *redisCmdMock) Iterator() redisIteratorInterface {
-	return m.Called().Get(0).(redisIteratorInterface)
-}
-
-// gorm mocks
-type gormMock struct {
-	mock.Mock
-}
-
-func (m *gormMock) AutoMigrate(dst ...interface{}) error {
-	args := m.Called()
-	return args.Error(0)
-}
-func (m *gormMock) First(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
-	args := m.Called()
-	return args.Get(0).(*gorm.DB)
-}
-func (m *gormMock) Create(value interface{}) (tx *gorm.DB) {
+func (m *gormAdapterMock) Create(db *gorm.DB, value interface{}) *gorm.DB {
 	if m.Called().Get(0) == nil {
 		return &gorm.DB{}
 	}
 	if value.(*tokenData).TokenType == "access" {
-		if m.Called().Get(0).(int) == 1 {
+		if m.Called().String(0) == "accessErr" {
 			g := &gorm.DB{}
-			g.Error = errors.New("access error")
+			g.Error = errors.New("accessErr")
 			return g
-		} else {
-			return &gorm.DB{}
 		}
+		return &gorm.DB{}
 	} else {
-		if m.Called().Get(0).(int) == 0 {
+		if m.Called().String(0) == "refreshErr" {
 			g := &gorm.DB{}
-			g.Error = errors.New("refresh error")
+			g.Error = errors.New("refreshErr")
 			return g
-		} else {
-			return &gorm.DB{}
 		}
+		return &gorm.DB{}
 	}
 }
-func (m *gormMock) Delete(value interface{}, conds ...interface{}) (tx *gorm.DB) {
-	args := m.Called()
-	return args.Get(0).(*gorm.DB)
+func (m *gormAdapterMock) SelectFirst(db *gorm.DB, query interface{}, destination interface{}) *gorm.DB {
+	return m.Called().Get(0).(*gorm.DB)
 }
-func (m *gormMock) Where(query interface{}, args ...interface{}) (tx interface{ gormInterface }) {
-	arguments := m.Called()
-	return arguments.Get(0).(interface{ gormInterface })
+func (m *gormAdapterMock) AutoMigrate(db *gorm.DB, dst ...interface{}) error {
+	return m.Called().Error(0)
 }
-func (m *gormMock) Unscoped() (tx interface{ gormInterface }) {
-	arguments := m.Called()
-	return arguments.Get(0).(interface{ gormInterface })
+
+type redisAdapterMock struct {
+	mock.Mock
 }
-func (m *gormMock) Transaction(fc func(tx interface{ gormInterface }) error, opts ...*sql.TxOptions) (err error) {
-	return fc(m.Called().Get(0).(interface{ gormInterface }))
+
+func (m *redisAdapterMock) Del(ctx context.Context, keys ...string) error {
+	return m.Called().Error(0)
+}
+func (m *redisAdapterMock) SaveMultipleInPipe(ctx context.Context, values ...redisValue) ([]redis.Cmder, error) {
+	return nil, m.Called().Error(0)
+}
+func (m *redisAdapterMock) Get(ctx context.Context, key string) (string, error) {
+	return m.Called().String(0), m.Called().Error(1)
+}
+func (m *redisAdapterMock) GetScanIterator(ctx context.Context, cursor uint64, match string, count int64) redisIteratorInterface {
+	return m.Called().Get(0).(redisIteratorInterface)
+}
+
+type redisIteratorMock struct {
+	mock.Mock
+	init bool
+}
+
+func (m *redisIteratorMock) Err() error {
+	return m.Called().Error(0)
+}
+func (m *redisIteratorMock) Next(ctx context.Context) bool {
+	if m.Called().Get(0) != nil {
+		return false
+	}
+	if m.init == true {
+		return false
+	}
+	m.setInit()
+	return true
+}
+func (m *redisIteratorMock) Val() string {
+	return m.Called().String(0)
+}
+func (m *redisIteratorMock) setInit() {
+	m.init = true
 }

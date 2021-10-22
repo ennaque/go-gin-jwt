@@ -1,4 +1,4 @@
-# gin-jwt ![tests](https://github.com/ennaque/gin-jwt/workflows/tests/badge.svg) [![codecov](https://codecov.io/gh/ennaque/gin-jwt/branch/master/graph/badge.svg?token=WZMWD36EKQ)](https://codecov.io/gh/ennaque/gin-jwt) [![codebeat badge](https://codebeat.co/badges/3683d866-0e28-4746-b25b-5cbabaacbbf4)](https://codebeat.co/projects/github-com-ennaque-gin-jwt-master)
+# gin-jwt ![tests](https://github.com/ennaque/go-gin-jwt/workflows/tests/badge.svg) [![codecov](https://codecov.io/gh/ennaque/gin-jwt/branch/master/graph/badge.svg?token=WZMWD36EKQ)](https://codecov.io/gh/ennaque/gin-jwt) [![codebeat badge](https://codebeat.co/badges/3683d866-0e28-4746-b25b-5cbabaacbbf4)](https://codebeat.co/projects/github-com-ennaque-gin-jwt-master)
 jwt package for gin go applications
 
 # Usage
@@ -6,13 +6,14 @@ jwt package for gin go applications
 Download using [go module](https://blog.golang.org/using-go-modules):
 
 ```sh
-go get github.com/ennaque/gin-jwt
+go get github.com/ennaque/go-gin-jwt
 ```
 
 Import it in your code:
 
 ```go
-import gwt "github.com/ennaque/gin-jwt"
+import gwt "github.com/ennaque/go-gin-jwt"
+import gwtstorage "github.com/ennaque/go-gin-jwt/storage"
 ```
 
 # Example
@@ -20,62 +21,79 @@ import gwt "github.com/ennaque/gin-jwt"
 ```go
 package main
 
-func main() {
-  router := gin.Default()
+import (
+	"github.com/ennaque/go-gin-jwt/storage"
+	"github.com/go-redis/redis/v8"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
 
-  db, err := gorm.Open(postgres.Open(GetDBConnectionData()))
-  if err != nil {
-    panic("db con failed")
-  }
-  
-  gs, err := storage.InitGormStorage(db, "jwt1234_")
-  if err != nil {
-    panic(err)
-  }
-  
-  auth, _ := gwt.Init(gwt.Settings{
-    Authenticator: func(c *gin.Context) (string, error) {
-      var loginCredentials LoginCredentials
-      if err := c.ShouldBind(&loginCredentials); err != nil {
-        return "", errors.New("bad request")
-      }
-      user, err := GetUserByCredentials(&loginCredentials)
-      if err != nil {
-        return "", errors.New("unauthorized")
-      }
-      return user.GetId(), nil
-    },
-    AccessSecretKey: []byte("access_super_secret"),
-    RefreshSecretKey: []byte("refresh_super_secret"),
-    Storage: gs,
-    // Storage: &storage.RedisStorage{Con: GetRedisClient()},
-    GetUserFunc: func(userId string) (interface{}, error) {
-      return GetUserById(userId)
-    },
-    AccessLifetime: time.Minute * 15,
-    RefreshLifetime: time.Hour * 48,
-    SigningMethod: "HS256",
-    AuthHeadName: "Bearer",
-  })
-  
-  a := router.Group("auth") {
-    a.POST("/logout", auth.Handler.GetLogoutHandler())
-    a.POST("/login", auth.Handler.GetLoginHandler())
-    a.POST("/refresh", auth.Handler.GetRefreshHandler())
-    a.POST("/force-logout", auth.Handler.GetForceLogoutHandler())
-  }
-  
-  router.Group("/api").Use(auth.Middleware.GetAuthMiddleware()).GET("/get-user-id", func(c *gin.Context) {
-    user, _ := c.Get("user")
-    c.JSON(http.StatusOK, gin.H{
-      "userId": user.(*models.User).ID,
-    })
-  })
-  
-  err := router.Run(":8000")
-  if err != nil {
-    panic("err")
-  }
+func main() {
+	router := gin.Default()
+
+	// GetDBConnectionData() - user func, must return dns string
+	// postgres is not required, other drivers can be used here
+	db, err := gorm.Open(postgres.Open(GetDBConnectionData()))
+	if err != nil {
+		panic("db con failed")
+	}
+
+	// init gorm storage
+	gs, err := storage.InitGormStorage(db, "jwt1234_")
+	if err != nil {
+		panic(err)
+	}
+
+	// init redis storage
+	// GetRedisOptions() - user func, must return *redis.Options
+	rs := storage.InitRedisStorage(redis.NewClient(GetRedisOptions()))
+
+	auth, _ := gwt.Init(gwt.Settings{
+		Authenticator: func(c *gin.Context) (string, error) { // required
+			// LoginCredentials - your login credentials model, can be differ
+			var loginCredentials LoginCredentials
+			if err := c.ShouldBind(&loginCredentials); err != nil {
+				return "", errors.New("bad request")
+			}
+			// GetUserByCredentials - user func, must return user model
+			user, err := GetUserByCredentials(&loginCredentials)
+			if err != nil {
+				return "", errors.New("unauthorized")
+			}
+			return user.GetId(), nil
+		},
+		AccessSecretKey:  []byte("access_super_secret"), // required
+		RefreshSecretKey: []byte("refresh_super_secret"), // optional, default - AccessSecretKey
+		Storage:          gs, // required, use gorm or redis storage
+		// Storage: rs,
+		GetUserFunc: func(userId string) (interface{}, error) { // required
+			return GetUserById(userId)
+		},
+		AccessLifetime:  time.Minute * 15, // optional, default - time.Minute * 15
+		RefreshLifetime: time.Hour * 24, // optional, default - time.Hour * 24
+		SigningMethod:   "HS256", // optional, default - HS256
+		AuthHeadName:    "Bearer", // optional, default - Bearer
+	})
+
+	a := router.Group("auth")
+	{
+		a.POST("/logout", auth.Handler.GetLogoutHandler())
+		a.POST("/login", auth.Handler.GetLoginHandler())
+		a.POST("/refresh", auth.Handler.GetRefreshHandler())
+		a.POST("/force-logout", auth.Handler.GetForceLogoutHandler())
+	}
+
+	router.Group("/api").Use(auth.Middleware.GetAuthMiddleware()).GET("/get-user-id", func(c *gin.Context) {
+		user, _ := c.Get("user")
+		c.JSON(http.StatusOK, gin.H{
+			"userId": user.(*models.User).ID,
+		})
+	})
+
+	err := router.Run(":8000")
+	if err != nil {
+		panic("err")
+	}
 }
 ```
 
