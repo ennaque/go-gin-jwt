@@ -22,7 +22,8 @@ import gwtstorage "github.com/ennaque/go-gin-jwt/storage"
 package main
 
 import (
-	"github.com/ennaque/go-gin-jwt/storage"
+	gwt "github.com/ennaque/go-gin-jwt"
+	gwtstorage "github.com/ennaque/go-gin-jwt/storage"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
