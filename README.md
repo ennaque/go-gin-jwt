@@ -1,4 +1,4 @@
-# gin-jwt ![tests](https://github.com/ennaque/go-gin-jwt/workflows/tests/badge.svg) [![codecov](https://codecov.io/gh/ennaque/gin-jwt/branch/master/graph/badge.svg?token=WZMWD36EKQ)](https://codecov.io/gh/ennaque/gin-jwt) [![codebeat badge](https://codebeat.co/badges/3683d866-0e28-4746-b25b-5cbabaacbbf4)](https://codebeat.co/projects/github-com-ennaque-gin-jwt-master)
+# gin-jwt ![tests](https://github.com/ennaque/go-gin-jwt/workflows/tests/badge.svg) [![codecov](https://codecov.io/gh/ennaque/go-gin-jwt/branch/master/graph/badge.svg?token=WZMWD36EKQ)](https://codecov.io/gh/ennaque/go-gin-jwt) [![codebeat badge](https://codebeat.co/badges/3683d866-0e28-4746-b25b-5cbabaacbbf4)](https://codebeat.co/projects/github-com-ennaque-gin-jwt-master)
 jwt package for gin go applications
 
 # Usage
