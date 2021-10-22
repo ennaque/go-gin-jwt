@@ -39,14 +39,14 @@ func main() {
 	}
 
 	// init gorm storage
-	gs, err := storage.InitGormStorage(db, "jwt1234_")
+	gs, err := gwtstorage.InitGormStorage(db, "jwt1234_")
 	if err != nil {
 		panic(err)
 	}
 
 	// init redis storage
 	// GetRedisOptions() - user func, must return *redis.Options
-	rs := storage.InitRedisStorage(redis.NewClient(GetRedisOptions()))
+	rs := gwtstorage.InitRedisStorage(redis.NewClient(GetRedisOptions()))
 
 	auth, _ := gwt.Init(gwt.Settings{
 		Authenticator: func(c *gin.Context) (string, error) { // required
