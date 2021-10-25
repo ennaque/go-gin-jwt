@@ -2,7 +2,6 @@ package gwt
 
 import (
 	"github.com/gin-gonic/gin"
-	"strconv"
 	"time"
 )
 
@@ -23,6 +22,20 @@ var availSigningMethods = map[string]string{
 	"HS512": "true",
 }
 
+type DefaultLoginResponse struct {
+	AccessToken   string `json:"access_token"`
+	RefreshToken  string `json:"refresh_token"`
+	AccessExpire  int64  `json:"access_expire"`
+	RefreshExpire int64  `json:"refresh_expire"`
+}
+
+type DefaultErrResponse struct {
+	ErrorCode    int    `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
+}
+
+type DefaultLogoutResponse struct{}
+
 var (
 	defaultSigningMethod     = "HS256"
 	defaultAccessLifetime    = time.Minute * 10
@@ -30,22 +43,19 @@ var (
 	defaultAuthHeadName      = "Bearer"
 	defaultLoginResponseFunc = func(c *gin.Context, code int, accessToken string,
 		accessExpire int64, refreshToken string, refreshExpire int64) {
-		c.JSON(code, gin.H{
-			"access_token":   accessToken,
-			"refresh_token":  refreshToken,
-			"access_expire":  strconv.FormatUint(uint64(accessExpire), 10),
-			"refresh_expire": strconv.FormatUint(uint64(refreshExpire), 10),
+		c.JSON(code, DefaultLoginResponse{
+			AccessToken:   accessToken,
+			RefreshToken:  refreshToken,
+			AccessExpire:  accessExpire,
+			RefreshExpire: refreshExpire,
 		})
 	}
 	defaultErrResponseFunc = func(c *gin.Context, code int, message string) {
-		c.JSON(code, gin.H{
-			"error_code":    code,
-			"error_message": message,
-		})
+		c.JSON(code, DefaultErrResponse{ErrorCode: code, ErrorMessage: message})
 		c.Abort()
 	}
 	defaultLogoutResponseFunc = func(c *gin.Context, code int) {
-		c.JSON(code, gin.H{})
+		c.JSON(code, DefaultLogoutResponse{})
 	}
 )
 
