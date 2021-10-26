@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+type RefreshRequestData struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 type Handler struct {
 	settings *Settings
 }
@@ -45,12 +49,12 @@ func (handler *Handler) loginHandler(c *gin.Context) {
 }
 func (handler *Handler) refreshHandler(c *gin.Context) {
 	service := &tokenService{}
-	mapToken := map[string]string{}
-	if err := c.ShouldBind(&mapToken); err != nil || mapToken[refreshTokenRequestParam] == "" {
+	refreshRequestData := RefreshRequestData{}
+	if err := c.ShouldBind(&refreshRequestData); err != nil || refreshRequestData.RefreshToken == "" {
 		handler.settings.ErrResponseFunc(c, http.StatusBadRequest, ErrRefreshTokenIsNotProvided.Error())
 		return
 	}
-	parsedToken, parseErr := service.parseToken(mapToken[refreshTokenRequestParam], handler.settings.RefreshSecretKey, handler.settings.SigningMethod)
+	parsedToken, parseErr := service.parseToken(refreshRequestData.RefreshToken, handler.settings.RefreshSecretKey, handler.settings.SigningMethod)
 	if parseErr != nil {
 		handler.settings.ErrResponseFunc(c, http.StatusBadRequest, parseErr.Error())
 		return
@@ -60,7 +64,7 @@ func (handler *Handler) refreshHandler(c *gin.Context) {
 		handler.settings.ErrResponseFunc(c, http.StatusBadRequest, getClaimsErr.Error())
 		return
 	}
-	if tokenExpErr := handler.settings.Storage.HasRefreshToken(claims[refreshUuidClaim], mapToken[refreshTokenRequestParam], claims[userIdClaim]); tokenExpErr != nil {
+	if tokenExpErr := handler.settings.Storage.HasRefreshToken(claims[refreshUuidClaim], refreshRequestData.RefreshToken, claims[userIdClaim]); tokenExpErr != nil {
 		handler.settings.ErrResponseFunc(c, http.StatusUnauthorized, tokenExpErr.Error())
 		return
 	}
