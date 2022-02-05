@@ -66,6 +66,7 @@ func getSettingsFixture() *Settings {
 			})
 			c.Abort()
 		},
-		Storage: &storageMock{},
+		Storage:              &storageMock{},
+		AdditionalAuthHeader: "x-auth-token",
 	}
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func testAuthMiddlewareInit(hasAccessTokenErr string, accessToken string,
-	provideAccessToken bool, userFuncErr bool) *httptest.ResponseRecorder {
+	provideAccessToken bool, userFuncErr bool, additionalHeader bool) *httptest.ResponseRecorder {
 	strgMock := new(storageMock)
 	if hasAccessTokenErr == "" {
 		strgMock.On("HasAccessToken", mock.Anything).Return(nil)
@@ -41,16 +41,29 @@ func testAuthMiddlewareInit(hasAccessTokenErr string, accessToken string,
 	if provideAccessToken {
 		request.Header.Add("Authorization", "Bearer "+accessToken)
 	}
+	if additionalHeader {
+		request.Header.Set("x-auth-token", "Bearer "+accessToken)
+	}
 
 	router.ServeHTTP(rr, request)
 
 	return rr
 }
 
+func TestAdditionalAuthTokenSuccess(t *testing.T) {
+	tService := tokenService{}
+	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
+	rr := testAuthMiddlewareInit("", accessData.token,
+		false, false, true)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+}
+
 func TestAuthMiddlewareSuccess(t *testing.T) {
 	tService := tokenService{}
 	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("", accessData.token, true, false)
+	rr := testAuthMiddlewareInit("", accessData.token,
+		true, false, false)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 }
@@ -58,7 +71,8 @@ func TestAuthMiddlewareSuccess(t *testing.T) {
 func TestNoAuthHeaderError(t *testing.T) {
 	tService := tokenService{}
 	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("", accessData.token, false, false)
+	rr := testAuthMiddlewareInit("", accessData.token,
+		false, false, false)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 }
@@ -66,7 +80,8 @@ func TestNoAuthHeaderError(t *testing.T) {
 func TestParseTokenError(t *testing.T) {
 	tService := tokenService{}
 	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("", accessData.token+"wrong", true, false)
+	rr := testAuthMiddlewareInit("", accessData.token+"wrong",
+		true, false, false)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
@@ -74,7 +89,8 @@ func TestParseTokenError(t *testing.T) {
 func TestHasAccessTokenError(t *testing.T) {
 	tService := tokenService{}
 	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("no token", accessData.token, true, false)
+	rr := testAuthMiddlewareInit("no token", accessData.token,
+		true, false, false)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 }
@@ -84,7 +100,8 @@ func TestAccessTokenExpiredError(t *testing.T) {
 	settings := getSettingsFixture()
 	settings.AccessLifetime = time.Nanosecond
 	accessData, _ := tService._createAccessToken(settings, "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("", accessData.token, true, false)
+	rr := testAuthMiddlewareInit("", accessData.token,
+		true, false, false)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 }
@@ -92,7 +109,8 @@ func TestAccessTokenExpiredError(t *testing.T) {
 func TestGetUserError(t *testing.T) {
 	tService := tokenService{}
 	accessData, _ := tService._createAccessToken(getSettingsFixture(), "1", "access", "refresh")
-	rr := testAuthMiddlewareInit("", accessData.token, true, true)
+	rr := testAuthMiddlewareInit("", accessData.token,
+		true, true, false)
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 }
