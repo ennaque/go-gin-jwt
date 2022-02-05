@@ -6,14 +6,13 @@ import (
 )
 
 var (
-	userIdClaim              = "user_id"
-	accessUuidClaim          = "access_uuid"
-	refreshUuidClaim         = "refresh_uuid"
-	expiredClaim             = "exp"
-	authHeader               = "Authorization"
-	userIdRequestParam       = "user_id"
-	refreshTokenRequestParam = "refresh_token"
-	UserKey                  = "user"
+	userIdClaim        = "user_id"
+	accessUuidClaim    = "access_uuid"
+	refreshUuidClaim   = "refresh_uuid"
+	expiredClaim       = "exp"
+	authHeader         = "Authorization"
+	userIdRequestParam = "user_id"
+	UserKey            = "user"
 )
 
 var availSigningMethods = map[string]string{

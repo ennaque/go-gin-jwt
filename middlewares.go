@@ -16,6 +16,9 @@ func (mw *Middleware) GetAuthMiddleware() gin.HandlerFunc {
 func (mw *Middleware) authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		service := &tokenService{}
+		if additionalHeader := mw.settings.AdditionalAuthHeader; additionalHeader != "" {
+			c.Request.Header.Add(authHeader, c.Request.Header.Get(additionalHeader))
+		}
 		accessToken, getErr := getHeaderToken(c.Request.Header.Get(authHeader), mw.settings.AuthHeadName)
 		if getErr != nil {
 			mw.settings.ErrResponseFunc(c, http.StatusUnauthorized, getErr.Error())
