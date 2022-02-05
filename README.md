@@ -74,6 +74,7 @@ func main() {
 		RefreshLifetime: time.Hour * 24, // optional, default - time.Hour * 24
 		SigningMethod:   "HS256", // optional, default - HS256
 		AuthHeadName:    "Bearer", // optional, default - Bearer
+		AdditionalAuthHeader: "x-auth-token", // optional, can be used to avoid safari redirect bug
 	})
 
 	a := router.Group("auth")
