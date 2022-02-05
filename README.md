@@ -6,7 +6,7 @@ jwt package for gin go applications
 Download using [go module](https://blog.golang.org/using-go-modules):
 
 ```sh
-go get github.com/ennaque/go-gin-jwt@v1.0.4
+go get github.com/ennaque/go-gin-jwt@v1.0.5
 ```
 
 Import it in your code:
